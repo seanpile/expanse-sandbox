@@ -8,9 +8,10 @@ define(["Vector"], function (Vector) {
   // Calculate a new 'CoM' given all of the current bodies and update the
   // coordinates of all current bodies.
   SolarSystem.prototype.update = function (t, dt) {
-
-    //this.updateBarycenter();
+    this.updateBarycenter();
     this.updateEphemeris(t, dt);
+
+    //console.log(this.bodies[2].velocity);
   };
 
   // Calcluate the barycenter of the system and adjust the coordinate
@@ -28,7 +29,6 @@ define(["Vector"], function (Vector) {
 
     this.bodies.forEach(function (body) {
       body.position = body.position.plus(newCenterOfMass);
-      body.velocity = body.velocity.plus(newCenterOfMass);
     });
   };
 

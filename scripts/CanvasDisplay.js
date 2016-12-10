@@ -2,7 +2,7 @@ const MIN_BODY_RADIUS = 5;
 const MAX_BODY_RADIUS = 25;
 const BASE_TIME_SCALE = 86400;
 let timeScale = 5;
-let numToRun = 1000;
+let numToRun = 10000;
 
 define(function () {
 
@@ -53,6 +53,10 @@ define(function () {
       radius = 3;
       color = "purple";
       break;
+    case "mars":
+      radius = 5;
+      color = "red";
+      break;
     default:
       radius = 5;
       color = "black";
@@ -91,14 +95,15 @@ define(function () {
       }, this);
 
       ctx.strokeStyle = "red";
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
-      ctx.moveTo(25, 0);
-      ctx.lineTo(-25, 0);
+      ctx.moveTo(50, 0);
+      ctx.lineTo(-50, 0);
       ctx.stroke();
       ctx.closePath();
       ctx.beginPath();
-      ctx.moveTo(0, 25);
-      ctx.lineTo(0, -25);
+      ctx.moveTo(0, 50);
+      ctx.lineTo(0, -50);
       ctx.stroke();
 
       last += step;
