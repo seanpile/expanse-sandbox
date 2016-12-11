@@ -21,6 +21,17 @@ Vector.prototype.magnitude = function (other) {
     Math.pow(this.z - other.z, 2));
 };
 
+Vector.prototype.dot = function (other) {
+  return this.x * other.x + this.y * other.y + this.z * other.z;
+};
+
+Vector.prototype.cross = function (other) {
+  return new Vector(
+    this.y * other.z - this.z * other.y,
+    this.z * other.x - this.x * other.z,
+    this.x * other.y - this.y * other.x);
+}
+
 // Export Vector
 define(function () {
   return Vector;
