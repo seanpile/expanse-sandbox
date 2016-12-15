@@ -1,8 +1,8 @@
 const MIN_BODY_RADIUS = 5;
 const MAX_BODY_RADIUS = 25;
 const BASE_TIME_SCALE = 86400;
-let timeScale = 5;
-let numToRun = 10000;
+let timeScale = 7;
+let numToRun = 1000;
 
 define(function () {
 
@@ -23,7 +23,7 @@ define(function () {
     function frame(time) {
       var stop = false;
       if (lastTime != null) {
-        var timeStep = (time - lastTime) / 1000 * BASE_TIME_SCALE * Math.pow(timeScale, 2);
+        var timeStep = (time - lastTime) * BASE_TIME_SCALE * Math.pow(timeScale, 2);
         stop = frameFunc(timeStep) === false;
       }
       lastTime = time;
@@ -33,14 +33,12 @@ define(function () {
     requestAnimationFrame(frame);
   }
 
-  CanvasDisplay.prototype._drawBody = function (body) {
+  CanvasDisplay.prototype._drawBody = function (planet) {
     let ctx = this.ctx;
     let canvas = this.canvas;
 
-    ctx.beginPath();
-
     let radius, color;
-    switch (body.name) {
+    switch (planet.name) {
     case "sun":
       radius = 25;
       color = "yellow";
@@ -62,10 +60,23 @@ define(function () {
       color = "black";
     }
 
-    // Calculate unit vector
-    let distance = body.position.magnitude();
-    let position = body.position.times(Math.min(canvas.height, canvas.width) / 5);
+    let scale = Math.min(canvas.height, canvas.width) / 5;
+    // let trajectoryCenter = planet.ellipseCenter.times(scale);
+    // let trajectoryMajor = planet.semiMajorAxis * scale;
+    // let trajectoryMinor = planet.semiMinorAxis * scale;
+    //
+    // // Calculate elliptical plot
+    // ctx.beginPath();
+    // ctx.strokeStyle = color;
+    // ctx.lineWidth = 0.5;
+    // ctx.ellipse(
+    //   trajectoryCenter.x,
+    //   trajectoryCenter.y,
+    //   trajectoryMajor,
+    //   trajectoryMinor, 0, 0, 2 * Math.PI);
+    // ctx.stroke();
 
+    let position = planet.position.times(scale);
     ctx.beginPath();
     ctx.fillStyle = color;
     ctx.arc(position.x, position.y, Math.max(MIN_BODY_RADIUS, radius), 0, 2 * Math.PI);
@@ -74,6 +85,7 @@ define(function () {
 
   CanvasDisplay.prototype.run = function () {
 
+    let t = Date.now();
     let last = 0;
     let numTimes = 0;
 
@@ -81,17 +93,17 @@ define(function () {
     let ctx = this.ctx;
     let canvas = this.canvas;
 
-    this._runAnimation(function (step) {
+    this._runAnimation(function (dt) {
 
       // Update physics
-      solarSystem.update(last, step);
+      solarSystem.update(t, dt);
 
       // Clear Canvas
       ctx.fillStyle = 'gray';
       ctx.fillRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
 
-      solarSystem.forEach(function (body) {
-        this._drawBody(body);
+      solarSystem.planets.forEach(function (planet) {
+        this._drawBody(planet);
       }, this);
 
       ctx.strokeStyle = "red";
@@ -106,8 +118,8 @@ define(function () {
       ctx.lineTo(0, -50);
       ctx.stroke();
 
-      last += step;
       numTimes++;
+      t += dt;
       if (numTimes >= numToRun) {
         console.log('All done!');
         return false;
