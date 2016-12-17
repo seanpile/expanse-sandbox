@@ -7,7 +7,8 @@ requirejs(["SolarSystem",
 
     let solarSystem = new SolarSystem();
     let canvas = document.getElementById("expanse-simulation");
-    let simulation = new Display(canvas, solarSystem);
+    let backgroundImage = document.getElementById("stars-background");
+    let simulation = new Display(canvas, solarSystem, backgroundImage);
     simulation.run();
 
     window.solarSystem = solarSystem;

@@ -1,13 +1,13 @@
 const MIN_ZOOM_LEVEL = 25;
 const MAX_ZOOM_LEVEL = 1000;
-const DEFAULT_ZOOM = 75;
+const DEFAULT_ZOOM = 250;
 const TIME_WARP_VALUES = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6];
 let numToRun = 10000;
 
 const PLANET_COLOURS = {
-  "mercury": "black",
+  "mercury": "silver",
   "mars": "red",
-  "earth": "blue",
+  "earth": "skyblue",
   "venus": "green",
   "sun": "yellow",
   "jupiter": "orange"
@@ -25,10 +25,13 @@ const PLANET_SIZES = {
 
 define(["moment"], function (moment) {
 
-  function CanvasDisplay(canvas, solarSystem) {
+  function CanvasDisplay(canvas, solarSystem, backgroundImage) {
+    this.solarSystem = solarSystem;
+    this.backgroundImage = backgroundImage;
+
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.solarSystem = solarSystem;
+
     this.time = Date.now();
     this.timeWarpIdx = 6;
     this.zoom = DEFAULT_ZOOM;
@@ -134,11 +137,6 @@ define(["moment"], function (moment) {
     this.isStopped = true;
   };
 
-  CanvasDisplay.prototype.zoomLevel = function () {
-    let zoom = this.zoomScale < 0 ? -1 / this.zoomScale : Math.max(this.zoomScale, 1);
-    return Math.min(this.canvas.height, this.canvas.width) * zoom;
-  };
-
   CanvasDisplay.prototype.zoomIn = function (x, y) {
     this.zoom = Math.min(this.zoom + 25, MAX_ZOOM_LEVEL);
   };
@@ -183,12 +181,9 @@ define(["moment"], function (moment) {
       solarSystem.update(t, dt);
 
       // Clear Canvas
-      ctx.fillStyle = 'gray';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Heads-up display elements (i.e., time, warp)
-      this._drawHUD();
-
+      //ctx.fillStyle = 'gray';
+      //ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(this.backgroundImage, 0, 0, canvas.width,  canvas.height);
       ctx.save();
 
       // Center the coordinate system in the middle
@@ -202,7 +197,6 @@ define(["moment"], function (moment) {
       this._drawBody({
         name: 'sun',
         position: new Vector(0, 0, 0),
-        radius: 6.96e8 / 149.597870e9
       })
 
       solarSystem.planets.forEach(function (planet) {
@@ -210,6 +204,10 @@ define(["moment"], function (moment) {
       }, this);
 
       ctx.restore();
+
+      // Heads-up display elements (i.e., time, warp)
+      this._drawHUD();
+
       numTimes++;
       if (numTimes >= numToRun) {
         console.log('All done!');
