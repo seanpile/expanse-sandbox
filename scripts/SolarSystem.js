@@ -6,7 +6,7 @@ define(["Vector", "moment"], function (Vector, moment) {
 
   function SolarSystem() {
 
-    let planets = {
+    let planetData = {
       "venus": {
         name: "venus",
         u: 0.3249e15 / Math.pow(AU, 3),
@@ -20,16 +20,44 @@ define(["Vector", "moment"], function (Vector, moment) {
       "mars": {
         name: "mars",
         u: 0.04283e15 / Math.pow(AU, 3),
-        a: [1.52371034, 0.00001847],
-        e: [0.09339410, 0.00007882],
-        I: [1.84969142, -0.00813131],
-        L: [-4.55343205, 19140.30268499],
-        w: [-23.94362959, 0.44441088],
-        omega: [49.55953891, -0.29257343],
+        a: [1.52371243, 0.00000097],
+        e: [0.09336511, 0.00009149],
+        I: [1.85181869, -0.00724757],
+        L: [-4.56813164, 19140.29934243],
+        w: [-23.91744784, 0.45223625],
+        omega: [49.71320984, -0.26852431],
+      },
+      "mercury": {
+        name: "mercury",
+        u: 0.02203e15 / Math.pow(AU, 3),
+        a: [0.38709843, 0.0],
+        e: [0.20563661, 0.00002123],
+        I: [7.00559432, -0.00590158],
+        L: [252.25166724, 149472.67486623],
+        w: [77.45771895, 0.15940013],
+        omega: [48.33961819, -0.12214182],
+      },
+      "jupiter": {
+        name: "jupiter",
+        u: 126.686e15 / Math.pow(AU, 3),
+        a: [5.20248019, -0.00002864],
+        e: [0.04853590, 0.00018026],
+        I: [1.29861416, -0.00322699],
+        L: [34.33479152, 3034.90371757],
+        w: [14.27495244, 0.18199196],
+        omega: [100.29282654, 0.13024619],
+        b: -0.00012452,
+        c: 0.6064060,
+        s: -0.35635438,
+        f: 38.35125000
       }
     }
 
-    this.planets = [planets["venus"], planets["mars"]];
+    this.planets = ["mercury", "venus", "mars", "jupiter"].map(function (name) {
+      let planet = planetData[name];
+      planet.averageAngularVelocity = new MovingAverage(5);
+      return planet;
+    });
     this.bodies = [];
   };
 
@@ -83,7 +111,11 @@ define(["Vector", "moment"], function (Vector, moment) {
       I,
       L,
       w,
-      omega
+      omega,
+      b,
+      c,
+      s,
+      f
     } = planet;
 
     a = a[0] + a[1] * T;
@@ -95,6 +127,9 @@ define(["Vector", "moment"], function (Vector, moment) {
 
     let argumentPerihelion = w - omega;
     let M = L - w;
+    if (b !== undefined && c !== undefined && s !== undefined && f !== undefined) {
+      M += b * Math.pow(T, 2) + c * Math.cos(f * T) + s * Math.sin(f * T);
+    }
 
     M = M % 360;
     if (M > 180) {
@@ -138,7 +173,9 @@ define(["Vector", "moment"], function (Vector, moment) {
 
     let currentDate = moment(t + dt);
     let T = this._calculateJulianDate(currentDate);
-    this.date = currentDate;
+
+    if (t + dt === this.lastTime)
+      return;
 
     this.planets.forEach(function (planet) {
 
@@ -168,14 +205,18 @@ define(["Vector", "moment"], function (Vector, moment) {
 
       // Average Angular Velocity (units == rad/second)
       let n;
-      if (!planet.lastMeanAnomaly) {
+
+      if (!planet.hasOwnProperty('lastMeanAnomaly')) {
         n = Math.sqrt(planet.u / Math.pow(a, 3));
-      } else {
-        n = (meanAnomaly - planet.lastMeanAnomaly) / ((t + dt - planet.lastTime) / 1000);
+      } else if (Math.sign(meanAnomaly) === Math.sign(planet.lastMeanAnomaly) ||
+        Math.sign(meanAnomaly) >= 0) {
+        n = (meanAnomaly - planet.lastMeanAnomaly) / ((t + dt - this.lastTime) / 1000);
+      } else if (Math.sign(meanAnomaly) < 0) {
+        n = (2 * Math.PI + meanAnomaly - planet.lastMeanAnomaly) / ((t + dt - this.lastTime) / 1000);
       }
 
-      planet.lastMeanAnomaly = meanAnomaly;
-      planet.lastTime = t + dt;
+      planet.averageAngularVelocity.add(n);
+      n = planet.averageAngularVelocity.average();
 
       // Calculate time until periapsis
       let periapsisDelta, apoapsisDelta;
@@ -183,9 +224,9 @@ define(["Vector", "moment"], function (Vector, moment) {
       if (meanAnomaly > 0) {
         periapsisDelta = (2 * Math.PI - meanAnomaly) / n;
         apoapsisDelta = (Math.PI - meanAnomaly) / n;
-      } else if (meanAnomaly < 0) {
+      } else if (meanAnomaly <= 0) {
         periapsisDelta = -meanAnomaly / n
-        apoapsisDelta = (Math.PI - meanAnomaly) / n;
+        apoapsisDelta = (Math.PI + (-meanAnomaly)) / n;
       }
 
       const periapsisDate = currentDate.clone().add(periapsisDelta, 's');
@@ -202,6 +243,8 @@ define(["Vector", "moment"], function (Vector, moment) {
         position: apoapsis.position,
         date: apoapsisDate
       };
+
+      planet.lastMeanAnomaly = meanAnomaly;
 
       {
         // Semi-minor axis
@@ -221,6 +264,29 @@ define(["Vector", "moment"], function (Vector, moment) {
       planet.position = position;
 
     }, this);
+
+    this.lastTime = t + dt;
+  };
+
+  function MovingAverage(size) {
+    this.size = size;
+    this.array = new Array(size);
+    this.idx = 0;
+  };
+
+  MovingAverage.prototype.add = function (item) {
+    this.array[this.idx++] = item;
+    if (this.idx === this.size) idx = 0;
+  };
+
+  MovingAverage.prototype.average = function () {
+    let sum = this.array.reduce(function (prev, cur) {
+      return [prev[0] + cur, prev[1] + 1]
+    }, [0, 0]);
+    if (sum[1] === 0)
+      return 0;
+
+    return sum[0] / sum[1];
   };
 
   return SolarSystem;

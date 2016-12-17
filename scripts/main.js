@@ -38,4 +38,12 @@ requirejs(["SolarSystem",
         keyCodes[event.keyCode](event);
       }
     });
+    addEventListener("wheel", function (event) {
+      event.preventDefault();
+      if (event.deltaY > 0) {
+        simulation.zoomOut();
+      } else if (event.deltaY < 0) {
+        simulation.zoomIn();
+      }
+    });
   });

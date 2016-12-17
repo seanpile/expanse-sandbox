@@ -1,9 +1,11 @@
 const MIN_BODY_RADIUS = 5;
 const MAX_BODY_RADIUS = 25;
+const MIN_ZOOM_LEVEL = -20;
+const MAX_ZOOM_LEVEL = 10;
 const TIME_WARP_VALUES = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6];
 let numToRun = 10000;
 
-define(function () {
+define(["moment"], function (moment) {
 
   function CanvasDisplay(canvas, solarSystem) {
     this.canvas = canvas;
@@ -11,6 +13,7 @@ define(function () {
     this.solarSystem = solarSystem;
     this.time = Date.now();
     this.timeWarpIdx = 6;
+    this.zoomScale = -5;
   };
 
   CanvasDisplay.prototype._runAnimation = function (frameFunc) {
@@ -60,7 +63,9 @@ define(function () {
       color = "black";
     }
 
-    let scale = Math.min(canvas.height, canvas.width) / 5;
+    let zoom = this.zoomScale < 0 ? 1 / Math.abs(this.zoomScale) : Math.max(this.zoomScale, 1);
+
+    let scale = Math.min(canvas.height, canvas.width) * zoom;
     let trajectoryCenter = planet.center.times(scale);
     let trajectoryMajor = planet.semiMajorAxis * scale;
     let trajectoryMinor = planet.semiMinorAxis * scale;
@@ -107,7 +112,7 @@ define(function () {
     // Draw current date
     ctx.font = '18px sans-serif';
     ctx.fillStyle = "silver";
-    ctx.fillText(`Date: ${solarSystem.date.format()}`, 10, 30);
+    ctx.fillText(`Date: ${moment(solarSystem.lastTime).format()}`, 10, 30);
 
     // Draw warp fields
     let xOffset = 10;
@@ -140,6 +145,14 @@ define(function () {
 
   CanvasDisplay.prototype.pause = function () {
     this.isStopped = true;
+  };
+
+  CanvasDisplay.prototype.zoomIn = function () {
+    this.zoomScale = Math.min(this.zoomScale + 1, MAX_ZOOM_LEVEL);
+  };
+
+  CanvasDisplay.prototype.zoomOut = function () {
+    this.zoomScale = Math.max(this.zoomScale - 1, MIN_ZOOM_LEVEL);
   };
 
   CanvasDisplay.prototype.run = function () {
