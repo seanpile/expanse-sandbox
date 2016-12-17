@@ -32,6 +32,7 @@ define(["moment"], function (moment) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
 
+    this.isStopped = true;
     this.time = Date.now();
     this.timeWarpIdx = 6;
     this.zoom = DEFAULT_ZOOM;
@@ -126,10 +127,18 @@ define(["moment"], function (moment) {
   };
 
   CanvasDisplay.prototype.speedUp = function () {
+    if (this.isStopped) {
+      return;
+    }
+
     this.timeWarpIdx = Math.min(TIME_WARP_VALUES.length - 1, this.timeWarpIdx + 1);
   };
 
   CanvasDisplay.prototype.slowDown = function () {
+    if (this.isStopped) {
+      return;
+    }
+
     this.timeWarpIdx = Math.max(0, this.timeWarpIdx - 1);
   };
 
@@ -138,20 +147,36 @@ define(["moment"], function (moment) {
   };
 
   CanvasDisplay.prototype.zoomIn = function (x, y) {
+    if (this.isStopped) {
+      return;
+    }
+
     this.zoom = Math.min(this.zoom + 25, MAX_ZOOM_LEVEL);
   };
 
   CanvasDisplay.prototype.zoomOut = function (x, y) {
+    if (this.isStopped) {
+      return;
+    }
+
     this.zoom = Math.max(this.zoom - 25, MIN_ZOOM_LEVEL);
   };
 
   CanvasDisplay.prototype.recenter = function () {
+    if (this.isStopped) {
+      return;
+    }
+
     this.viewDeltaX = 0;
     this.viewDeltaY = 0;
     this.zoom = DEFAULT_ZOOM;
   };
 
   CanvasDisplay.prototype.moveViewBy = function (deltaX, deltaY) {
+    if (this.isStopped) {
+      return;
+    }
+
     this.viewDeltaX += deltaX;
     this.viewDeltaY += deltaY;
 
@@ -159,7 +184,16 @@ define(["moment"], function (moment) {
     console.log(this.viewDeltaY);
   };
 
+  CanvasDisplay.prototype.isRunning = function() {
+    return !this.isStopped;
+  }
+
   CanvasDisplay.prototype.run = function () {
+
+    if (this.isRunning()) {
+      return;
+    }
+
     this.isStopped = false;
 
     let numTimes = 0;
@@ -211,6 +245,7 @@ define(["moment"], function (moment) {
       numTimes++;
       if (numTimes >= numToRun) {
         console.log('All done!');
+        this.isStopped = true;
         return false;
       }
 

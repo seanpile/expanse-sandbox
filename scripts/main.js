@@ -16,24 +16,25 @@ requirejs(["SolarSystem",
 
     var keyCodes = {
       32: function (event) {
-        if (event.target.value === "Pause") {
+        if (simulation.isRunning()) {
           simulation.pause();
-          event.target.value = "Run";
         } else {
           simulation.run();
-          event.target.value = "Pause";
         }
 
         event.preventDefault();
       },
       44: function (event) {
         simulation.slowDown();
+        event.preventDefault();
       },
       46: function (event) {
         simulation.speedUp();
+        event.preventDefault();
       },
       99: function (event) {
         simulation.recenter();
+        event.preventDefault();
       }
     };
 

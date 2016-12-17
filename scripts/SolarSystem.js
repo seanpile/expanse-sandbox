@@ -61,10 +61,12 @@ define(["Vector", "moment"], function (Vector, moment) {
         w: [14.27495244, 0.18199196],
         omega: [100.29282654, 0.13024619],
         radius: 7.1492e7 / AU,
-        b: -0.00012452,
-        c: 0.6064060,
-        s: -0.35635438,
-        f: 38.35125000
+        perturbations: {
+          b: -0.00012452,
+          c: 0.6064060,
+          s: -0.35635438,
+          f: 38.35125000
+        }
       }
     }
 
@@ -127,10 +129,7 @@ define(["Vector", "moment"], function (Vector, moment) {
       L,
       w,
       omega,
-      b,
-      c,
-      s,
-      f
+      perturbations
     } = planet;
 
     a = a[0] + a[1] * T;
@@ -142,8 +141,10 @@ define(["Vector", "moment"], function (Vector, moment) {
 
     let argumentPerihelion = w - omega;
     let M = L - w;
-    if (b !== undefined && c !== undefined && s !== undefined && f !== undefined) {
-      M += b * Math.pow(T, 2) + c * Math.cos(f * T) + s * Math.sin(f * T);
+    if (perturbations) {
+      M += perturbations.b * Math.pow(T, 2) +
+        perturbations.c * Math.cos(perturbations.f * T) +
+        perturbations.s * Math.sin(perturbations.f * T);
     }
 
     M = M % 360;
@@ -165,16 +166,18 @@ define(["Vector", "moment"], function (Vector, moment) {
       a * Math.sqrt(1 - Math.pow(e, 2)) * Math.sin((Math.PI / 180) * E),
       0);
 
-    // Convert params to radians for this next transformation
-    argumentPerihelion = argumentPerihelion * (Math.PI / 180);
-    omega = omega * (Math.PI / 180);
-    I = I * (Math.PI / 180);
+    // Convert to the ecliptic plane
+    let eclipticPosition = this._transformToEcliptic(
+      helioCentricPosition,
+      argumentPerihelion * Math.PI / 180,
+      omega * Math.PI / 180,
+      I * Math.PI / 180)
 
     return {
       meanAnomaly: M * (Math.PI / 180),
       eccentricAnomaly: E * (Math.PI / 180),
       trueAnomaly: trueAnomaly,
-      position: this._transformToEcliptic(helioCentricPosition, argumentPerihelion, omega, I)
+      position: eclipticPosition
     };
   };
 
