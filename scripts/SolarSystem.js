@@ -15,7 +15,8 @@ define(["Vector", "moment"], function (Vector, moment) {
         I: [3.39777545, 0.00043494],
         L: [181.97970850, 58517.81560260],
         w: [131.76755713, 0.05679648],
-        omega: [76.67261496, -0.27274174]
+        omega: [76.67261496, -0.27274174],
+        radius: 6.0518e6 / AU
       },
       "mars": {
         name: "mars",
@@ -26,6 +27,18 @@ define(["Vector", "moment"], function (Vector, moment) {
         L: [-4.56813164, 19140.29934243],
         w: [-23.91744784, 0.45223625],
         omega: [49.71320984, -0.26852431],
+        radius: 3.397e6 / AU
+      },
+      "earth": {
+        name: "earth",
+        u: 0.3986e15 / Math.pow(AU, 3),
+        a: [1.00000018, -0.00000003],
+        e: [0.01673163, -0.00003661],
+        I: [-0.00054346, -0.01337178],
+        L: [100.46691572, 35999.37306329],
+        w: [102.93005885, 0.31795260],
+        omega: [-5.11260389, -0.24123856],
+        radius: 6.3781e6 / AU
       },
       "mercury": {
         name: "mercury",
@@ -36,6 +49,7 @@ define(["Vector", "moment"], function (Vector, moment) {
         L: [252.25166724, 149472.67486623],
         w: [77.45771895, 0.15940013],
         omega: [48.33961819, -0.12214182],
+        radius: 2.4397e6 / AU
       },
       "jupiter": {
         name: "jupiter",
@@ -46,6 +60,7 @@ define(["Vector", "moment"], function (Vector, moment) {
         L: [34.33479152, 3034.90371757],
         w: [14.27495244, 0.18199196],
         omega: [100.29282654, 0.13024619],
+        radius: 7.1492e7 / AU,
         b: -0.00012452,
         c: 0.6064060,
         s: -0.35635438,
@@ -53,7 +68,7 @@ define(["Vector", "moment"], function (Vector, moment) {
       }
     }
 
-    this.planets = ["mercury", "venus", "mars", "jupiter"].map(function (name) {
+    this.planets = ["mercury", "venus", "mars", "earth", "jupiter"].map(function (name) {
       let planet = planetData[name];
       planet.averageAngularVelocity = new MovingAverage(5);
       return planet;

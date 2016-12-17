@@ -1,9 +1,27 @@
-const MIN_BODY_RADIUS = 5;
-const MAX_BODY_RADIUS = 25;
-const MIN_ZOOM_LEVEL = -20;
-const MAX_ZOOM_LEVEL = 10;
+const MIN_ZOOM_LEVEL = 25;
+const MAX_ZOOM_LEVEL = 1000;
+const DEFAULT_ZOOM = 75;
 const TIME_WARP_VALUES = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6];
 let numToRun = 10000;
+
+const PLANET_COLOURS = {
+  "mercury": "black",
+  "mars": "red",
+  "earth": "blue",
+  "venus": "green",
+  "sun": "yellow",
+  "jupiter": "orange"
+};
+
+const PLANET_SIZES = {
+  "mercury": 2.5,
+  "venus": 6,
+  "earth": 6.3,
+  "mars": 3.5,
+  "jupiter": 10,
+  "saturn": 8,
+  "sun": 15,
+}
 
 define(["moment"], function (moment) {
 
@@ -13,7 +31,9 @@ define(["moment"], function (moment) {
     this.solarSystem = solarSystem;
     this.time = Date.now();
     this.timeWarpIdx = 6;
-    this.zoomScale = -5;
+    this.zoom = DEFAULT_ZOOM;
+    this.viewDeltaX = 0;
+    this.viewDeltaY = 0;
   };
 
   CanvasDisplay.prototype._runAnimation = function (frameFunc) {
@@ -36,70 +56,37 @@ define(["moment"], function (moment) {
     let ctx = this.ctx;
     let canvas = this.canvas;
 
-    let radius, color;
-    switch (planet.name) {
-    case "sun":
-      radius = 25;
-      color = "yellow";
-      break;
-    case "earth":
-      radius = 10;
-      color = "blue";
-      break;
-    case "moon":
-      radius = 3;
-      color = "purple";
-      break;
-    case "venus":
-      radius = 5;
-      color = "green";
-      break;
-    case "mars":
-      radius = 5;
-      color = "red";
-      break;
-    default:
-      radius = 5;
-      color = "black";
+    // Calculate elliptical plot
+    if (planet.center) {
+      ctx.beginPath();
+      ctx.strokeStyle = PLANET_COLOURS[planet.name];
+      ctx.lineWidth = 0.5 / this.zoom;
+      ctx.ellipse(
+        planet.center.x,
+        planet.center.y,
+        planet.semiMajorAxis,
+        planet.semiMinorAxis, 0, 0, 2 * Math.PI);
+      ctx.stroke();
     }
 
-    let zoom = this.zoomScale < 0 ? 1 / Math.abs(this.zoomScale) : Math.max(this.zoomScale, 1);
-
-    let scale = Math.min(canvas.height, canvas.width) * zoom;
-    let trajectoryCenter = planet.center.times(scale);
-    let trajectoryMajor = planet.semiMajorAxis * scale;
-    let trajectoryMinor = planet.semiMinorAxis * scale;
-
-    // Calculate elliptical plot
     ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 0.5;
-    ctx.ellipse(
-      trajectoryCenter.x,
-      trajectoryCenter.y,
-      trajectoryMajor,
-      trajectoryMinor, 0, 0, 2 * Math.PI);
-    ctx.stroke();
-
-    let position = planet.position.times(scale);
-    ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.arc(position.x, position.y, Math.max(MIN_BODY_RADIUS, radius), 0, 2 * Math.PI);
+    ctx.fillStyle = PLANET_COLOURS[planet.name];
+    ctx.arc(planet.position.x, planet.position.y, PLANET_SIZES[planet.name] / this.zoom, 0, 2 * Math.PI);
     ctx.fill();
 
     if (planet.periapsis) {
-      let periapsis = planet.periapsis.position.times(scale);
+      let periapsis = planet.periapsis.position;
       ctx.beginPath();
       ctx.fillStyle = 'aqua';
-      ctx.arc(periapsis.x, periapsis.y, Math.max(MIN_BODY_RADIUS, radius), 0, 2 * Math.PI);
+      ctx.arc(periapsis.x, periapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
       ctx.fill();
     }
 
     if (planet.apoapsis) {
-      let apoapsis = planet.apoapsis.position.times(scale);
+      let apoapsis = planet.apoapsis.position;
       ctx.beginPath();
       ctx.fillStyle = 'aqua';
-      ctx.arc(apoapsis.x, apoapsis.y, Math.max(MIN_BODY_RADIUS, radius), 0, 2 * Math.PI);
+      ctx.arc(apoapsis.x, apoapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
       ctx.fill();
     };
   }
@@ -147,12 +134,31 @@ define(["moment"], function (moment) {
     this.isStopped = true;
   };
 
-  CanvasDisplay.prototype.zoomIn = function () {
-    this.zoomScale = Math.min(this.zoomScale + 1, MAX_ZOOM_LEVEL);
+  CanvasDisplay.prototype.zoomLevel = function () {
+    let zoom = this.zoomScale < 0 ? -1 / this.zoomScale : Math.max(this.zoomScale, 1);
+    return Math.min(this.canvas.height, this.canvas.width) * zoom;
   };
 
-  CanvasDisplay.prototype.zoomOut = function () {
-    this.zoomScale = Math.max(this.zoomScale - 1, MIN_ZOOM_LEVEL);
+  CanvasDisplay.prototype.zoomIn = function (x, y) {
+    this.zoom = Math.min(this.zoom + 25, MAX_ZOOM_LEVEL);
+  };
+
+  CanvasDisplay.prototype.zoomOut = function (x, y) {
+    this.zoom = Math.max(this.zoom - 25, MIN_ZOOM_LEVEL);
+  };
+
+  CanvasDisplay.prototype.recenter = function () {
+    this.viewDeltaX = 0;
+    this.viewDeltaY = 0;
+    this.zoom = DEFAULT_ZOOM;
+  };
+
+  CanvasDisplay.prototype.moveViewBy = function (deltaX, deltaY) {
+    this.viewDeltaX += deltaX;
+    this.viewDeltaY += deltaY;
+
+    console.log(this.viewDeltaX);
+    console.log(this.viewDeltaY);
   };
 
   CanvasDisplay.prototype.run = function () {
@@ -189,31 +195,29 @@ define(["moment"], function (moment) {
       ctx.scale(-1, 1);
       ctx.translate(-canvas.width / 2, canvas.height / 2);
       ctx.rotate(Math.PI);
+      ctx.translate(this.viewDeltaX, this.viewDeltaY);
+      ctx.scale(this.zoom, this.zoom);
+
+      // Draw the sun artificially at the center of the map
+      this._drawBody({
+        name: 'sun',
+        position: new Vector(0, 0, 0),
+        radius: 6.96e8 / 149.597870e9
+      })
 
       solarSystem.planets.forEach(function (planet) {
         this._drawBody(planet);
       }, this);
 
-      ctx.strokeStyle = "silver";
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(20, 0);
-      ctx.lineTo(-20, 0);
-      ctx.stroke();
-      ctx.closePath();
-      ctx.beginPath();
-      ctx.moveTo(0, 20);
-      ctx.lineTo(0, -20);
-      ctx.stroke();
-
       ctx.restore();
-
       numTimes++;
-      this.time += dt;
       if (numTimes >= numToRun) {
         console.log('All done!');
         return false;
       }
+
+      this.time += dt;
+
     }.bind(this));
   };
 
