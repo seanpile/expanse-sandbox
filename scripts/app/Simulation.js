@@ -1,6 +1,6 @@
 define(["moment"], function (moment) {
 
-  const numToRun = 10000;
+  const numToRun = 100;
 
   function Simulation(solarSystem, renderer) {
     this.solarSystem = solarSystem;

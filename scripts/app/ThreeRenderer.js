@@ -1,4 +1,4 @@
-define(["moment", "app/Vector"], function (moment, Vector) {
+define(["moment", "three", "app/Vector"], function (moment, THREE, Vector) {
 
   const MIN_ZOOM_LEVEL = 10;
   const MAX_ZOOM_LEVEL = 1000;
@@ -23,24 +23,30 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     "sun": 15,
   }
 
-  function CanvasRenderer(container, backgroundImage) {
+  function ThreeRenderer(container) {
+    this.container = container;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.renderer = new THREE.WebGLRenderer();
+    this.renderer.setSize(1024, 680);
 
-    let document = container.getRootNode();
-    let canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 680;
-    container.appendChild(canvas);
+    container.appendChild(this.renderer.domElement);
 
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    this.backgroundImage = backgroundImage;
+    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var material = new THREE.MeshBasicMaterial({
+      color: 0x00ff00
+    });
+    var cube = new THREE.Mesh(geometry, material);
+    this.scene.add(cube);
+    this.cube = cube;
+    this.camera.position.z = 5;
 
     this.zoom = DEFAULT_ZOOM;
     this.viewDeltaX = 0;
     this.viewDeltaY = 0;
   };
 
-  CanvasRenderer.prototype._drawBody = function (planet) {
+  ThreeRenderer.prototype._drawBody = function (planet) {
     let ctx = this.ctx;
     let canvas = this.canvas;
 
@@ -79,8 +85,9 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     };
   }
 
-  CanvasRenderer.prototype._drawHUD = function (simulation) {
+  ThreeRenderer.prototype._drawHUD = function (simulation) {
 
+    /*
     let ctx = this.ctx;
     let canvas = this.canvas;
 
@@ -108,30 +115,36 @@ define(["moment", "app/Vector"], function (moment, Vector) {
 
       xOffset += 20;
     }
+    */
   };
 
-  CanvasRenderer.prototype.zoomIn = function (x, y) {
+  ThreeRenderer.prototype.zoomIn = function (x, y) {
     this.zoom = Math.min(this.zoom + 15, MAX_ZOOM_LEVEL);
   };
 
-  CanvasRenderer.prototype.zoomOut = function (x, y) {
+  ThreeRenderer.prototype.zoomOut = function (x, y) {
     this.zoom = Math.max(this.zoom - 15, MIN_ZOOM_LEVEL);
   };
 
-  CanvasRenderer.prototype.recenter = function () {
+  ThreeRenderer.prototype.recenter = function () {
     this.viewDeltaX = 0;
     this.viewDeltaY = 0;
     this.zoom = DEFAULT_ZOOM;
   };
 
-  CanvasRenderer.prototype.moveViewBy = function (deltaX, deltaY) {
+  ThreeRenderer.prototype.moveViewBy = function (deltaX, deltaY) {
     this.viewDeltaX += deltaX;
     this.viewDeltaY += deltaY;
   };
 
-  CanvasRenderer.prototype.redraw = function (simulation, solarSystem) {
-    const ctx = this.ctx;
-    const canvas = this.canvas;
+  ThreeRenderer.prototype.redraw = function (simulation, solarSystem) {
+
+    console.log(this.cube.position);
+    this.cube.rotation.x += 0.01;
+    this.cube.rotation.y += 0.01;
+    this.renderer.render(this.scene, this.camera);
+
+    /*
 
     // Clear Canvas
     ctx.drawImage(this.backgroundImage, 0, 0, canvas.width, canvas.height);
@@ -159,7 +172,9 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     // Heads-up display elements (i.e., time, warp)
     this._drawHUD(simulation);
 
+    */
+
   };
 
-  return CanvasRenderer;
+  return ThreeRenderer;
 });

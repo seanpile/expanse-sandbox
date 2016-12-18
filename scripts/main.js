@@ -14,15 +14,19 @@ requirejs.config({
 requirejs([
     "app/SolarSystem",
     "app/CanvasRenderer",
+    "app/ThreeRenderer",
     "app/Simulation",
     "app/Vector"
   ],
 
-  function (SolarSystem, CanvasRenderer, Simulation, Vector) {
+  function (SolarSystem, CanvasRenderer, ThreeRenderer, Simulation, Vector) {
 
-    let canvas = document.getElementById("expanse-simulation");
-    let backgroundImage = document.getElementById("stars-background");
-    let renderer = new CanvasRenderer(canvas, backgroundImage);
+    let container = document.getElementById('simulation-content');
+    let backgroundImage = document.getElementById('stars-background');
+
+    //let renderer = new CanvasRenderer(container, backgroundImage);
+    let renderer = new ThreeRenderer(container);
+
     let solarSystem = new SolarSystem();
     let simulation = new Simulation(solarSystem, renderer);
     simulation.run();
@@ -37,28 +41,25 @@ requirejs([
         } else {
           simulation.run();
         }
-
-        event.preventDefault();
       },
       44: function (event) {
         simulation.slowDown();
-        event.preventDefault();
       },
       46: function (event) {
         simulation.speedUp();
-        event.preventDefault();
       },
       99: function (event) {
         simulation.recenter();
-        event.preventDefault();
       }
     };
 
     addEventListener("keypress", function (event) {
       if (event.type === "keypress" && keyCodes.hasOwnProperty(event.keyCode)) {
         keyCodes[event.keyCode](event);
+        event.preventDefault();
       }
     });
+
     addEventListener("wheel", function (event) {
       event.preventDefault();
       if (event.deltaY > 0) {
@@ -69,33 +70,35 @@ requirejs([
     });
 
     addEventListener("mousedown", function (event) {
-      if (event.target === canvas) {
-        event.preventDefault();
-        if (event.buttons === 1) {
+      if (!container.contains(event.target)) {
+        return;
+      }
 
-          let pan = (function () {
-            let screenX = event.screenX,
-              screenY = event.screenY;
+      event.preventDefault();
+      if (event.buttons === 1) {
 
-            return function (e) {
-              deltaX = e.screenX - screenX;
-              deltaY = screenY - e.screenY;
+        let pan = (function () {
+          let screenX = event.screenX,
+            screenY = event.screenY;
 
-              screenX = e.screenX;
-              screenY = e.screenY;
+          return function (e) {
+            deltaX = e.screenX - screenX;
+            deltaY = screenY - e.screenY;
 
-              simulation.moveViewBy(deltaX, deltaY);
-            }
-          })();
+            screenX = e.screenX;
+            screenY = e.screenY;
 
-          function removePan(e) {
-            removeEventListener("mousemove", pan);
-            removeEventListener("mouseup", removePan);
-          };
+            simulation.moveViewBy(deltaX, deltaY);
+          }
+        })();
 
-          addEventListener("mousemove", pan);
-          addEventListener("mouseup", removePan);
-        }
+        function removePan(e) {
+          removeEventListener("mousemove", pan);
+          removeEventListener("mouseup", removePan);
+        };
+
+        addEventListener("mousemove", pan);
+        addEventListener("mouseup", removePan);
       }
     })
 
