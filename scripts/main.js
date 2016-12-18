@@ -1,14 +1,16 @@
 requirejs(["SolarSystem",
-    "CanvasDisplay",
+    "CanvasRenderer",
+    "Simulation",
     "Vector"
   ],
 
-  function (SolarSystem, Display, Vector) {
+  function (SolarSystem, CanvasRenderer, Simulation, Vector) {
 
-    let solarSystem = new SolarSystem();
     let canvas = document.getElementById("expanse-simulation");
     let backgroundImage = document.getElementById("stars-background");
-    let simulation = new Display(canvas, solarSystem, backgroundImage);
+    let renderer = new CanvasRenderer(canvas, backgroundImage);
+    let solarSystem = new SolarSystem();
+    let simulation = new Simulation(solarSystem, renderer);
     simulation.run();
 
     window.solarSystem = solarSystem;

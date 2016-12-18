@@ -67,10 +67,27 @@ define(["Vector", "moment"], function (Vector, moment) {
           s: -0.35635438,
           f: 38.35125000
         }
+      },
+      "saturn": {
+        name: "saturn",
+        u: 37.391e15 / Math.pow(AU, 3),
+        a: [9.54149883, -0.00003065],
+        e: [0.05550825, -0.00032044],
+        I: [2.49424102, 0.00451969],
+        L: [50.07571329, 1222.11494724],
+        w: [92.86136063, 0.54179478],
+        omega: [113.63998702, -0.25015002],
+        radius: 6.0268e7 / AU,
+        perturbations: {
+          b: 0.00025899,
+          c: -0.13434469,
+          s: 0.87320147,
+          f: 38.35125000
+        }
       }
     }
 
-    this.planets = ["mercury", "venus", "mars", "earth", "jupiter"].map(function (name) {
+    this.planets = Object.keys(planetData).map(function (name) {
       let planet = planetData[name];
       planet.averageAngularVelocity = new MovingAverage(5);
       return planet;
