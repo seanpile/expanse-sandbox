@@ -1,4 +1,4 @@
-define(["moment"], function (moment) {
+define(["moment", "app/Vector"], function (moment, Vector) {
 
   const MIN_ZOOM_LEVEL = 10;
   const MAX_ZOOM_LEVEL = 1000;

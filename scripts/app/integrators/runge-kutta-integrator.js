@@ -1,4 +1,4 @@
-define(["Vector"], function (Vector) {
+define(["app/Vector"], function (Vector) {
 
   function RungeKuttaIntegrator() {};
 

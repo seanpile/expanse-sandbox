@@ -1,4 +1,4 @@
-define(["Vector", "moment"], function (Vector, moment) {
+define(["app/Vector", "moment"], function (Vector, moment) {
 
   const AU = 149.59787e9;
   const J2000_date = moment('2000-01-01T12:00:00Z');
