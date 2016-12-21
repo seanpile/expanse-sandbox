@@ -1,6 +1,6 @@
 define(["moment"], function (moment) {
 
-  const numToRun = 100;
+  const numToRun = 10000;
 
   function Simulation(solarSystem, renderer) {
     this.solarSystem = solarSystem;
@@ -92,6 +92,9 @@ define(["moment"], function (moment) {
     }
 
     this.isStopped = false;
+    this.solarSystem.update(this.time, 0);
+    this.renderer.initialize(this.solarSystem);
+
     let numTimes = 0;
 
     runAnimation(function (dt) {
@@ -106,7 +109,7 @@ define(["moment"], function (moment) {
 
       // Update physics
       this.solarSystem.update(t, dt);
-      this.renderer.redraw(this, solarSystem);
+      this.renderer.render(this, solarSystem);
 
       numTimes++;
       if (numTimes >= numToRun) {

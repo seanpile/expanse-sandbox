@@ -88,6 +88,7 @@ define(["app/Vector", "moment"], function (Vector, moment) {
     }
 
     this.planets = Object.keys(planetData).map(function (name) {
+    //this.planets = ["earth"].map(function (name) {
       let planet = planetData[name];
       planet.averageAngularVelocity = new MovingAverage(5);
       return planet;

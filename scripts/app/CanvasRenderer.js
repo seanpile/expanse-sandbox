@@ -38,6 +38,63 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     this.zoom = DEFAULT_ZOOM;
     this.viewDeltaX = 0;
     this.viewDeltaY = 0;
+
+    let scope = this;
+
+    var keyCodes = {
+      99: function (event) {
+        scope.recenter();
+      }
+    };
+
+    container.addEventListener("keypress", function (event) {
+      if (event.type === "keypress" && keyCodes.hasOwnProperty(event.keyCode)) {
+        keyCodes[event.keyCode](event);
+        event.preventDefault();
+      }
+    });
+
+    container.addEventListener("wheel", function (event) {
+      event.preventDefault();
+      if (event.deltaY > 0) {
+        scope.zoomOut();
+      } else if (event.deltaY < 0) {
+        scope.zoomIn(event.clientX, event.clientY);
+      }
+    });
+
+    container.addEventListener("mousedown", function (event) {
+      if (!container.contains(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      if (event.buttons === 1) {
+
+        let pan = (function () {
+          let screenX = event.screenX,
+            screenY = event.screenY;
+
+          return function (e) {
+            deltaX = e.screenX - screenX;
+            deltaY = screenY - e.screenY;
+
+            screenX = e.screenX;
+            screenY = e.screenY;
+
+            scope.moveViewBy(deltaX, deltaY);
+          }
+        })();
+
+        function removePan(e) {
+          removeEventListener("mousemove", pan);
+          removeEventListener("mouseup", removePan);
+        };
+
+        addEventListener("mousemove", pan);
+        addEventListener("mouseup", removePan);
+      }
+    })
   };
 
   CanvasRenderer.prototype._drawBody = function (planet) {
@@ -129,7 +186,11 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     this.viewDeltaY += deltaY;
   };
 
-  CanvasRenderer.prototype.redraw = function (simulation, solarSystem) {
+  CanvasRenderer.prototype.initialize = function (solarSystem) {
+    // Do nothing; we redraw all elements on every loop
+  };
+
+  CanvasRenderer.prototype.render = function (simulation, solarSystem) {
     const ctx = this.ctx;
     const canvas = this.canvas;
 

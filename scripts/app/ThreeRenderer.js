@@ -1,180 +1,142 @@
-define(["moment", "three", "app/Vector"], function (moment, THREE, Vector) {
+define(["moment", "three", "OrbitControls", "app/Vector"],
+  function (moment, THREE, OrbitControls, Vector) {
 
-  const MIN_ZOOM_LEVEL = 10;
-  const MAX_ZOOM_LEVEL = 1000;
-  const DEFAULT_ZOOM = 250;
-  const PLANET_COLOURS = {
-    "mercury": "silver",
-    "mars": "red",
-    "earth": "skyblue",
-    "venus": "green",
-    "sun": "yellow",
-    "jupiter": "orange",
-    "saturn": "tan"
-  };
+    const DEFAULT_CAMERA_P = 1000;
+    const DEFAULT_CAMERA_PHI = 0;
+    const DEFAULT_CAMERA_THETA = 0;
 
-  const PLANET_SIZES = {
-    "mercury": 2.5,
-    "venus": 6,
-    "earth": 6.3,
-    "mars": 3.5,
-    "jupiter": 10,
-    "saturn": 8,
-    "sun": 15,
-  }
+    const MIN_ZOOM_LEVEL = 10;
+    const MAX_ZOOM_LEVEL = 1000;
+    const DEFAULT_ZOOM = 100;
 
-  function ThreeRenderer(container) {
-    this.container = container;
-    this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.renderer = new THREE.WebGLRenderer();
-    this.renderer.setSize(1024, 680);
-
-    container.appendChild(this.renderer.domElement);
-
-    var geometry = new THREE.BoxGeometry(1, 1, 1);
-    var material = new THREE.MeshBasicMaterial({
-      color: 0x00ff00
-    });
-    var cube = new THREE.Mesh(geometry, material);
-    this.scene.add(cube);
-    this.cube = cube;
-    this.camera.position.z = 5;
-
-    this.zoom = DEFAULT_ZOOM;
-    this.viewDeltaX = 0;
-    this.viewDeltaY = 0;
-  };
-
-  ThreeRenderer.prototype._drawBody = function (planet) {
-    let ctx = this.ctx;
-    let canvas = this.canvas;
-
-    // Calculate elliptical plot
-    if (planet.center) {
-      ctx.beginPath();
-      ctx.strokeStyle = PLANET_COLOURS[planet.name];
-      ctx.lineWidth = 0.5 / this.zoom;
-      ctx.ellipse(
-        planet.center.x,
-        planet.center.y,
-        planet.semiMajorAxis,
-        planet.semiMinorAxis, 0, 0, 2 * Math.PI);
-      ctx.stroke();
-    }
-
-    ctx.beginPath();
-    ctx.fillStyle = PLANET_COLOURS[planet.name];
-    ctx.arc(planet.position.x, planet.position.y, PLANET_SIZES[planet.name] / this.zoom, 0, 2 * Math.PI);
-    ctx.fill();
-
-    if (planet.periapsis) {
-      let periapsis = planet.periapsis.position;
-      ctx.beginPath();
-      ctx.fillStyle = 'aqua';
-      ctx.arc(periapsis.x, periapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-
-    if (planet.apoapsis) {
-      let apoapsis = planet.apoapsis.position;
-      ctx.beginPath();
-      ctx.fillStyle = 'aqua';
-      ctx.arc(apoapsis.x, apoapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
-      ctx.fill();
+    const PLANET_COLOURS = {
+      "mercury": "silver",
+      "mars": "red",
+      "earth": "skyblue",
+      "venus": "green",
+      "sun": "yellow",
+      "jupiter": "orange",
+      "saturn": "tan"
     };
-  }
 
-  ThreeRenderer.prototype._drawHUD = function (simulation) {
-
-    /*
-    let ctx = this.ctx;
-    let canvas = this.canvas;
-
-    // Draw current date
-    ctx.font = '18px sans-serif';
-    ctx.fillStyle = "silver";
-    ctx.fillText(`Date: ${moment(simulation.time).format()}`, 10, 30);
-
-    // Draw warp fields
-    let xOffset = 10;
-    let yOffset = canvas.height - 20;
-    for (let i = 0; i < simulation.timeWarpValues.length; i++) {
-      ctx.beginPath();
-      ctx.moveTo(xOffset, yOffset - 10);
-      ctx.lineTo(xOffset, yOffset + 10);
-      ctx.lineTo(xOffset + 17.321, yOffset);
-      ctx.closePath();
-      if (i <= simulation.timeWarpIdx) {
-        ctx.fillStyle = "green";
-        ctx.fill();
-      }
-
-      ctx.strokeStyle = "silver";
-      ctx.stroke();
-
-      xOffset += 20;
+    const PLANET_SIZES = {
+      "mercury": 2.5,
+      "venus": 6,
+      "earth": 6.3,
+      "mars": 3.5,
+      "jupiter": 10,
+      "saturn": 8,
+      "sun": 15,
     }
-    */
-  };
 
-  ThreeRenderer.prototype.zoomIn = function (x, y) {
-    this.zoom = Math.min(this.zoom + 15, MAX_ZOOM_LEVEL);
-  };
+    function ThreeRenderer(container) {
 
-  ThreeRenderer.prototype.zoomOut = function (x, y) {
-    this.zoom = Math.max(this.zoom - 15, MIN_ZOOM_LEVEL);
-  };
+      let width = 1024;
+      let height = 680;
 
-  ThreeRenderer.prototype.recenter = function () {
-    this.viewDeltaX = 0;
-    this.viewDeltaY = 0;
-    this.zoom = DEFAULT_ZOOM;
-  };
+      this.renderer = new THREE.WebGLRenderer();
+      this.renderer.setSize(width, height);
+      container.appendChild(this.renderer.domElement);
 
-  ThreeRenderer.prototype.moveViewBy = function (deltaX, deltaY) {
-    this.viewDeltaX += deltaX;
-    this.viewDeltaY += deltaY;
-  };
+      //this.camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, 1, 1000);
+      this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
+      this.camera.position.z = 1000;
+      this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+      this.orbitControls = new OrbitControls(this.camera, container);
+      this.orbitControls.addEventListener('change', function (event) {});
 
-  ThreeRenderer.prototype.redraw = function (simulation, solarSystem) {
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color('gray');
+      this.scene.add(new THREE.AxisHelper(1000));
 
-    console.log(this.cube.position);
-    this.cube.rotation.x += 0.01;
-    this.cube.rotation.y += 0.01;
-    this.renderer.render(this.scene, this.camera);
+      this.zoom = DEFAULT_ZOOM;
 
-    /*
+      addEventListener("keypress", function (event) {
+        if (event.keyCode === 99) {
+          this.recenter();
+        }
+      }.bind(this));
+    };
 
-    // Clear Canvas
-    ctx.drawImage(this.backgroundImage, 0, 0, canvas.width, canvas.height);
-    ctx.save();
+    ThreeRenderer.prototype.recenter = function () {
+      this.orbitControls.reset();
+    };
 
-    // Center the coordinate system in the middle
-    ctx.scale(-1, 1);
-    ctx.translate(-canvas.width / 2, canvas.height / 2);
-    ctx.rotate(Math.PI);
-    ctx.translate(this.viewDeltaX, this.viewDeltaY);
-    ctx.scale(this.zoom, this.zoom);
+    ThreeRenderer.prototype.initialize = function (solarSystem) {
 
-    // Draw the sun artificially at the center of the map
-    this._drawBody({
-      name: 'sun',
-      position: new Vector(0, 0, 0),
-    })
+      // Maintain a mapping from planet -> THREE object representing the planet
+      // This will allow us to update the existing THREE object on each iteration
+      // of the render loop.
+      solarSystem.planets.forEach(function (planet) {
 
-    solarSystem.planets.forEach(function (planet) {
-      this._drawBody(planet);
-    }, this);
+        let threeBody = this.scene.getObjectByName(planet.name);
+        if (threeBody) {
+          this.scene.remove(threeBody);
+        }
 
-    ctx.restore();
+        let geometry = new THREE.SphereGeometry(10, 32, 32);
+        let material = new THREE.MeshBasicMaterial({
+          color: PLANET_COLOURS[planet.name]
+        });
 
-    // Heads-up display elements (i.e., time, warp)
-    this._drawHUD(simulation);
+        threeBody = new THREE.Mesh(geometry, material);
+        threeBody.name = planet.name;
+        threeBody.scale = new THREE.Vector3(10, 10, 10);
 
-    */
+        this.scene.add(threeBody);
+      }, this);
 
-  };
+    };
 
-  return ThreeRenderer;
-});
+    ThreeRenderer.prototype.render = function (simulation, solarSystem) {
+
+      const scale = 100;
+
+      solarSystem.planets.forEach(function (planet) {
+
+        let threeBody = this.scene.getObjectByName(planet.name);
+        let position = planet.position.times(this.zoom);
+        let apoapsis = planet.apoapsis.position.times(this.zoom);
+        let periapsis = planet.periapsis.position.times(this.zoom);
+
+        threeBody.position.x = position.x;
+        threeBody.position.y = position.y;
+        threeBody.position.z = position.z;
+
+        this.scene.remove(this.scene.getObjectByName(`${planet.name}-trajectory`));
+
+        //Create a closed wavey loop
+        var curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(
+            apoapsis.x,
+            apoapsis.y,
+            apoapsis.z),
+          new THREE.Vector3(
+            position.x,
+            position.y,
+            position.z),
+          new THREE.Vector3(
+            periapsis.x,
+            periapsis.y,
+            periapsis.z),
+        ]);
+
+        var geometry = new THREE.Geometry();
+        geometry.vertices = curve.getPoints(50);
+
+        var material = new THREE.LineBasicMaterial({
+          color: `${PLANET_COLOURS[planet.name]}`
+        });
+
+        // Create the final object to add to the scene
+        var curveObject = new THREE.Line(geometry, material);
+        curveObject.name = `${planet.name}-trajectory`;
+        this.scene.add(curveObject);
+
+      }, this);
+
+      this.renderer.render(this.scene, this.camera);
+    };
+
+    return ThreeRenderer;
+  });
