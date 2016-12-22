@@ -7,7 +7,7 @@ define(["moment"], function (moment) {
     this.renderer = renderer;
     this.isStopped = true;
     this.time = Date.now();
-    this.timeWarpValues = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6];
+    this.timeWarpValues = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6, 10e7];
     this.timeWarpIdx = 6;
     this.viewDeltaX = 0;
     this.viewDeltaY = 0;

@@ -16,7 +16,8 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
       "venus": "green",
       "sun": "yellow",
       "jupiter": "orange",
-      "saturn": "tan"
+      "saturn": "tan",
+      "pluto": "silver",
     };
 
     const PLANET_SIZES = {
@@ -39,7 +40,7 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
       container.appendChild(this.renderer.domElement);
 
       //this.camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, 1, 1000);
-      this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
+      this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
       this.camera.position.z = 1000;
       this.camera.lookAt(new THREE.Vector3(0, 0, 0));
       this.orbitControls = new OrbitControls(this.camera, container);
@@ -81,23 +82,22 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
 
         threeBody = new THREE.Mesh(geometry, material);
         threeBody.name = planet.name;
-        threeBody.scale = new THREE.Vector3(10, 10, 10);
-
         this.scene.add(threeBody);
+
       }, this);
 
     };
 
     ThreeRenderer.prototype.render = function (simulation, solarSystem) {
 
-      const scale = 100;
-
       solarSystem.planets.forEach(function (planet) {
 
         let threeBody = this.scene.getObjectByName(planet.name);
         let position = planet.position.times(this.zoom);
-        let apoapsis = planet.apoapsis.position.times(this.zoom);
-        let periapsis = planet.periapsis.position.times(this.zoom);
+        let apoapsis = planet.apoapsis.times(this.zoom);
+        let periapsis = planet.periapsis.times(this.zoom);
+        let semiMajorAxis = planet.semiMajorAxis * this.zoom;
+        let center = planet.center.times(this.zoom);
 
         threeBody.position.x = position.x;
         threeBody.position.y = position.y;
@@ -105,33 +105,22 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
 
         this.scene.remove(this.scene.getObjectByName(`${planet.name}-trajectory`));
 
-        //Create a closed wavey loop
-        var curve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(
-            apoapsis.x,
-            apoapsis.y,
-            apoapsis.z),
-          new THREE.Vector3(
-            position.x,
-            position.y,
-            position.z),
-          new THREE.Vector3(
-            periapsis.x,
-            periapsis.y,
-            periapsis.z),
-        ]);
-
-        var geometry = new THREE.Geometry();
-        geometry.vertices = curve.getPoints(50);
-
+        var geometry = new THREE.CircleGeometry(semiMajorAxis, 32);
         var material = new THREE.LineBasicMaterial({
-          color: `${PLANET_COLOURS[planet.name]}`
+          color: PLANET_COLOURS[planet.name]
         });
 
         // Create the final object to add to the scene
-        var curveObject = new THREE.Line(geometry, material);
-        curveObject.name = `${planet.name}-trajectory`;
-        this.scene.add(curveObject);
+        var trajectory = new THREE.Line(geometry, material);
+        trajectory.translateX(center.x);
+        trajectory.translateY(center.y);
+        trajectory.translateZ(center.z);
+        trajectory.rotateZ(planet.derivedValues.omega);
+        trajectory.rotateX(planet.derivedValues.I);
+        trajectory.rotateZ(planet.derivedValues.argumentPerihelion);
+        trajectory.name = `${planet.name}-trajectory`;
+
+        this.scene.add(trajectory);
 
       }, this);
 

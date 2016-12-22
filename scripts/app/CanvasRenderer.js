@@ -17,6 +17,7 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     "mercury": 2.5,
     "venus": 6,
     "earth": 6.3,
+    "pluto": 6,
     "mars": 3.5,
     "jupiter": 10,
     "saturn": 8,
@@ -101,8 +102,22 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     let ctx = this.ctx;
     let canvas = this.canvas;
 
-    // Calculate elliptical plot
-    if (planet.center) {
+    ctx.beginPath();
+    ctx.fillStyle = PLANET_COLOURS[planet.name];
+    ctx.arc(planet.position.x, planet.position.y, PLANET_SIZES[planet.name] / this.zoom, 0, 2 * Math.PI);
+    ctx.fill();
+
+    if (planet.name !== "sun") {
+      // Calculate elliptical plot
+      let rotationPoint;
+      if (planet.apoapsis.x) {
+        rotationPoint = planet.apoapsis;
+      } else {
+        rotationPoint = planet.periapsis;
+      }
+
+      let rotationAngle = Math.atan((rotationPoint.y - planet.center.y) / (rotationPoint.x - planet.center.x));
+
       ctx.beginPath();
       ctx.strokeStyle = PLANET_COLOURS[planet.name];
       ctx.lineWidth = 0.5 / this.zoom;
@@ -110,30 +125,27 @@ define(["moment", "app/Vector"], function (moment, Vector) {
         planet.center.x,
         planet.center.y,
         planet.semiMajorAxis,
-        planet.semiMinorAxis, 0, 0, 2 * Math.PI);
+        planet.semiMinorAxis,
+        rotationAngle, 0, 2 * Math.PI);
       ctx.stroke();
-    }
 
-    ctx.beginPath();
-    ctx.fillStyle = PLANET_COLOURS[planet.name];
-    ctx.arc(planet.position.x, planet.position.y, PLANET_SIZES[planet.name] / this.zoom, 0, 2 * Math.PI);
-    ctx.fill();
-
-    if (planet.periapsis) {
-      let periapsis = planet.periapsis.position;
       ctx.beginPath();
       ctx.fillStyle = 'aqua';
-      ctx.arc(periapsis.x, periapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
+      ctx.arc(planet.center.x, planet.center.y, 3 / this.zoom, 0, 2 * Math.PI);
       ctx.fill();
-    }
 
-    if (planet.apoapsis) {
-      let apoapsis = planet.apoapsis.position;
+      // Periapsis
+      ctx.beginPath();
+      ctx.fillStyle = 'purple';
+      ctx.arc(planet.periapsis.x, planet.periapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Apoapsis
       ctx.beginPath();
       ctx.fillStyle = 'aqua';
-      ctx.arc(apoapsis.x, apoapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
+      ctx.arc(planet.apoapsis.x, planet.apoapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
       ctx.fill();
-    };
+    }
   }
 
   CanvasRenderer.prototype._drawHUD = function (simulation) {
