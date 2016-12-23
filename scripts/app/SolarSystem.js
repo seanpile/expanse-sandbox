@@ -11,7 +11,6 @@ define(["app/Planets", "app/Vector", "app/util/MovingAverage", "moment"],
         let planet = PLANETS[name];
         planet.name = name;
         planet.derived = {};
-        planet.derived.averageAngularVelocity = new MovingAverage(5);
         return planet;
       });
       this.bodies = [];
@@ -28,45 +27,16 @@ define(["app/Planets", "app/Vector", "app/util/MovingAverage", "moment"],
         let planet_constants = planet.constants;
         let derived = planet.derived;
 
-        let {
-          a,
-          e,
-          I,
-          L,
-          w,
-          omega,
-          perturbations
-        } = kepler_elements;
+        let a = kepler_elements.a[0] + kepler_elements.a[1] * T;
+        let e = kepler_elements.e[0] + kepler_elements.e[1] * T;
+        let I = kepler_elements.I[0] + kepler_elements.I[1] * T;
+        let L = kepler_elements.L[0] + kepler_elements.L[1] * T;
+        let w = kepler_elements.w[0] + kepler_elements.w[1] * T;
+        let omega = kepler_elements.omega[0] + kepler_elements.omega[1] * T;
+        let perturbations = kepler_elements.perturbations;
 
-        a = a[0] + a[1] * T;
-        e = e[0] + e[1] * T;
-        I = I[0] + I[1] * T;
-        L = L[0] + L[1] * T;
-        w = w[0] + w[1] * T;
-        omega = omega[0] + omega[1] * T;
-
-        let {
-          meanAnomaly,
-          trueAnomaly,
-          eccentricAnomaly,
-          position
-        } = this._calculatePlanetPosition(a, e, I, L, w, omega, perturbations, T);
-
-        // Average Angular Velocity (units == rad/second)
-        let n;
-
-        if (!derived.hasOwnProperty('lastMeanAnomaly')) {
-          n = Math.sqrt(planet_constants.u / Math.pow(a, 3));
-        } else if (Math.sign(meanAnomaly) === Math.sign(derived.lastMeanAnomaly) ||
-          Math.sign(meanAnomaly) >= 0) {
-          n = (meanAnomaly - derived.lastMeanAnomaly) / ((t + dt - this.lastTime) / 1000);
-        } else if (Math.sign(meanAnomaly) < 0) {
-          n = (2 * Math.PI + meanAnomaly - derived.lastMeanAnomaly) / ((t + dt - this.lastTime) / 1000);
-        }
-
-        let averageAngularVelocity = derived.averageAngularVelocity;
-        averageAngularVelocity.add(n);
-        n = averageAngularVelocity.average();
+        let delta = this._calculatePlanetPosition(a, e, I, L, w, omega, perturbations, T);
+        let position = delta.position;
 
         // Semi-minor axis
         let b = a * Math.sqrt(1 - Math.pow(e, 2));
@@ -89,8 +59,6 @@ define(["app/Planets", "app/Vector", "app/util/MovingAverage", "moment"],
           omega: omega,
           argumentPerihelion: argumentPerihelion,
           position: position,
-          averageAngularVelocity: averageAngularVelocity,
-          lastMeanAnomaly: meanAnomaly,
           semiMajorAxis: a,
           semiMinorAxis: b,
           center: this._transformToEcliptic(center, argumentPerihelion, omega, I),

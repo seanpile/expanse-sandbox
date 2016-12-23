@@ -28,17 +28,14 @@ requirejs([
     document.body.appendChild(stats.dom);
 
     let simulation = new Simulation(solarSystem, renderer, stats);
-    simulation.run();
+    simulation.initialize();
 
     window.solarSystem = solarSystem;
     window.simulation = simulation;
-    window.addEventListener("focus", function(event) {
-      simulation.run();
-    });
-    window.addEventListener("blur", function(event) {
+    window.addEventListener("blur", function (event) {
       simulation.pause();
     });
-    window.addEventListener("unload", function(event) {
+    window.addEventListener("unload", function (event) {
       simulation.pause();
     });
 
