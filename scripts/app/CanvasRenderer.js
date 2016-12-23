@@ -10,7 +10,10 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     "venus": "green",
     "sun": "yellow",
     "jupiter": "orange",
-    "saturn": "tan"
+    "saturn": "tan",
+    "uranus": "skyblue",
+    "neptune": "lightblue",
+    "pluto": "silver"
   };
 
   const PLANET_SIZES = {
@@ -20,6 +23,8 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     "pluto": 6,
     "mars": 3.5,
     "jupiter": 10,
+    "uranus": 7,
+    "neptune": 7,
     "saturn": 8,
     "sun": 15,
   }
@@ -104,46 +109,41 @@ define(["moment", "app/Vector"], function (moment, Vector) {
 
     ctx.beginPath();
     ctx.fillStyle = PLANET_COLOURS[planet.name];
-    ctx.arc(planet.position.x, planet.position.y, PLANET_SIZES[planet.name] / this.zoom, 0, 2 * Math.PI);
+    ctx.arc(planet.derived.position.x, planet.derived.position.y, PLANET_SIZES[planet.name] / this.zoom, 0, 2 * Math.PI);
     ctx.fill();
 
     if (planet.name !== "sun") {
       // Calculate elliptical plot
       let rotationPoint;
-      if (planet.apoapsis.x) {
-        rotationPoint = planet.apoapsis;
+      if (planet.derived.apoapsis.x >= 0) {
+        rotationPoint = planet.derived.apoapsis;
       } else {
-        rotationPoint = planet.periapsis;
+        rotationPoint = planet.derived.periapsis;
       }
 
-      let rotationAngle = Math.atan((rotationPoint.y - planet.center.y) / (rotationPoint.x - planet.center.x));
+      let rotationAngle = Math.atan((rotationPoint.y - planet.derived.center.y) / (rotationPoint.x - planet.derived.center.x));
 
       ctx.beginPath();
       ctx.strokeStyle = PLANET_COLOURS[planet.name];
       ctx.lineWidth = 0.5 / this.zoom;
       ctx.ellipse(
-        planet.center.x,
-        planet.center.y,
-        planet.semiMajorAxis,
-        planet.semiMinorAxis,
+        planet.derived.center.x,
+        planet.derived.center.y,
+        planet.derived.semiMajorAxis,
+        planet.derived.semiMinorAxis,
         rotationAngle, 0, 2 * Math.PI);
       ctx.stroke();
-
-      ctx.beginPath();
-      ctx.fillStyle = 'aqua';
-      ctx.arc(planet.center.x, planet.center.y, 3 / this.zoom, 0, 2 * Math.PI);
-      ctx.fill();
 
       // Periapsis
       ctx.beginPath();
       ctx.fillStyle = 'purple';
-      ctx.arc(planet.periapsis.x, planet.periapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
+      ctx.arc(planet.derived.periapsis.x, planet.derived.periapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
       ctx.fill();
 
       // Apoapsis
       ctx.beginPath();
       ctx.fillStyle = 'aqua';
-      ctx.arc(planet.apoapsis.x, planet.apoapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
+      ctx.arc(planet.derived.apoapsis.x, planet.derived.apoapsis.y, 3 / this.zoom, 0, 2 * Math.PI);
       ctx.fill();
     }
   }
@@ -220,7 +220,9 @@ define(["moment", "app/Vector"], function (moment, Vector) {
     // Draw the sun artificially at the center of the map
     this._drawBody({
       name: 'sun',
-      position: new Vector(0, 0, 0),
+      derived: {
+        position: new Vector(0, 0, 0)
+      }
     })
 
     solarSystem.planets.forEach(function (planet) {

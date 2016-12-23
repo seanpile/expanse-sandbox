@@ -7,7 +7,7 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
 
     const MIN_ZOOM_LEVEL = 10;
     const MAX_ZOOM_LEVEL = 1000;
-    const DEFAULT_ZOOM = 100;
+    const AU_SCALE = 1;
 
     const PLANET_COLOURS = {
       "mercury": "silver",
@@ -17,15 +17,20 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
       "sun": "yellow",
       "jupiter": "orange",
       "saturn": "tan",
-      "pluto": "silver",
+      "uranus": "skyblue",
+      "neptune": "lightblue",
+      "pluto": "silver"
     };
 
     const PLANET_SIZES = {
       "mercury": 2.5,
       "venus": 6,
       "earth": 6.3,
+      "pluto": 6,
       "mars": 3.5,
       "jupiter": 10,
+      "uranus": 7,
+      "neptune": 7,
       "saturn": 8,
       "sun": 15,
     }
@@ -40,17 +45,16 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
       container.appendChild(this.renderer.domElement);
 
       //this.camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, 1, 1000);
-      this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
-      this.camera.position.z = 1000;
+      this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 100);
+      this.camera.position.z = 5
       this.camera.lookAt(new THREE.Vector3(0, 0, 0));
-      this.orbitControls = new OrbitControls(this.camera, container);
+
+      let orbitControls = new OrbitControls(this.camera, container);
+      this.orbitControls = orbitControls;
       this.orbitControls.addEventListener('change', function (event) {});
 
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color('gray');
-      this.scene.add(new THREE.AxisHelper(1000));
-
-      this.zoom = DEFAULT_ZOOM;
 
       addEventListener("keypress", function (event) {
         if (event.keyCode === 99) {
@@ -70,19 +74,32 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
       // of the render loop.
       solarSystem.planets.forEach(function (planet) {
 
-        let threeBody = this.scene.getObjectByName(planet.name);
-        if (threeBody) {
-          this.scene.remove(threeBody);
-        }
+        this.scene.remove(this.scene.getObjectByName(planet.name));
+        this.scene.remove(this.scene.getObjectByName(`${planet.name}-periapsis`));
+        this.scene.remove(this.scene.getObjectByName(`${planet.name}-apoapsis`));
 
-        let geometry = new THREE.SphereGeometry(10, 32, 32);
-        let material = new THREE.MeshBasicMaterial({
-          color: PLANET_COLOURS[planet.name]
-        });
+        let threeBody = new THREE.Mesh(new THREE.SphereGeometry(PLANET_SIZES[planet.name] / 100, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color: PLANET_COLOURS[planet.name]
+          }));
 
-        threeBody = new THREE.Mesh(geometry, material);
+        let periapsis = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color: 'purple'
+          }));
+
+        let apoapsis = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color: 'aqua'
+          }));
+
         threeBody.name = planet.name;
+        periapsis.name = `${planet.name}-periapsis`;
+        apoapsis.name = `${planet.name}-apoapsis`;
+
         this.scene.add(threeBody);
+        this.scene.add(periapsis);
+        this.scene.add(apoapsis);
 
       }, this);
 
@@ -93,33 +110,38 @@ define(["moment", "three", "OrbitControls", "app/Vector"],
       solarSystem.planets.forEach(function (planet) {
 
         let threeBody = this.scene.getObjectByName(planet.name);
-        let position = planet.position.times(this.zoom);
-        let apoapsis = planet.apoapsis.times(this.zoom);
-        let periapsis = planet.periapsis.times(this.zoom);
-        let semiMajorAxis = planet.semiMajorAxis * this.zoom;
-        let center = planet.center.times(this.zoom);
+        let threePeriapsis = this.scene.getObjectByName(`${planet.name}-periapsis`);
+        let threeApoapsis = this.scene.getObjectByName(`${planet.name}-apoapsis`);
 
-        threeBody.position.x = position.x;
-        threeBody.position.y = position.y;
-        threeBody.position.z = position.z;
+        let derived = planet.derived;
+        let position = derived.position.times(AU_SCALE);
+        let apoapsis = derived.apoapsis.times(AU_SCALE);
+        let periapsis = derived.periapsis.times(AU_SCALE);
+        let semiMajorAxis = derived.semiMajorAxis * AU_SCALE;
+        let semiMinorAxis = derived.semiMinorAxis * AU_SCALE;
+        let center = derived.center.times(AU_SCALE);
 
+        threeBody.position.set(position.x, position.y, position.z);
+        threePeriapsis.position.set(periapsis.x, periapsis.y, periapsis.z);
+        threeApoapsis.position.set(apoapsis.x, apoapsis.y, apoapsis.z);
+
+        // Redraw the trajectory for this planet
         this.scene.remove(this.scene.getObjectByName(`${planet.name}-trajectory`));
 
-        var geometry = new THREE.CircleGeometry(semiMajorAxis, 32);
-        var material = new THREE.LineBasicMaterial({
-          color: PLANET_COLOURS[planet.name]
-        });
+        var trajectory = new THREE.Line(new THREE.CircleGeometry(semiMajorAxis, 32),
+          new THREE.LineBasicMaterial({
+            color: PLANET_COLOURS[planet.name]
+          }));
 
-        // Create the final object to add to the scene
-        var trajectory = new THREE.Line(geometry, material);
         trajectory.translateX(center.x);
         trajectory.translateY(center.y);
         trajectory.translateZ(center.z);
-        trajectory.rotateZ(planet.derivedValues.omega);
-        trajectory.rotateX(planet.derivedValues.I);
-        trajectory.rotateZ(planet.derivedValues.argumentPerihelion);
-        trajectory.name = `${planet.name}-trajectory`;
+        trajectory.rotateZ(derived.omega);
+        trajectory.rotateX(derived.I);
+        trajectory.rotateZ(derived.argumentPerihelion);
+        trajectory.scale.set(1, semiMinorAxis / semiMajorAxis, 1);
 
+        trajectory.name = `${planet.name}-trajectory`;
         this.scene.add(trajectory);
 
       }, this);

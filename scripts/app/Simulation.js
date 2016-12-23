@@ -2,12 +2,13 @@ define(["moment"], function (moment) {
 
   const numToRun = 10000;
 
-  function Simulation(solarSystem, renderer) {
+  function Simulation(solarSystem, renderer, stats) {
     this.solarSystem = solarSystem;
     this.renderer = renderer;
+    this.stats = stats;
     this.isStopped = true;
     this.time = Date.now();
-    this.timeWarpValues = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6, 10e7];
+    this.timeWarpValues = [1, 5, 10, 50, 100, 10e2, 10e3, 10e4, 10e5, 10e6, 10e7, 10e8];
     this.timeWarpIdx = 6;
     this.viewDeltaX = 0;
     this.viewDeltaY = 0;
@@ -85,7 +86,7 @@ define(["moment"], function (moment) {
     return !this.isStopped;
   }
 
-  Simulation.prototype.run = function () {
+  Simulation.prototype.run = function (stats) {
 
     if (this.isRunning()) {
       return;
@@ -103,6 +104,8 @@ define(["moment"], function (moment) {
         return false;
       }
 
+      this.stats.begin();
+
       let t = this.time;
       let timeScale = this.timeWarpValues[this.timeWarpIdx];
       dt *= timeScale;
@@ -119,6 +122,7 @@ define(["moment"], function (moment) {
       }
 
       this.time += dt;
+      this.stats.end();
 
     }.bind(this));
   };
