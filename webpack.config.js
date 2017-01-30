@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-  context: path.resolve(__dirname, './scripts'),
+  context: path.resolve(__dirname, './src'),
   entry: './main.js',
   devtool: 'cheap-eval-source-map',
   module: {
@@ -23,6 +23,6 @@ module.exports = {
     publicPath: '/assets'
   },
   devServer: {
-    contentBase: path.resolve(__dirname, './scripts')
+    contentBase: path.resolve(__dirname, './src')
   }
 }

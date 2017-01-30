@@ -1,6 +1,6 @@
 import moment from 'moment';
 import Vector from './Vector';
-//import OrbitControls from 'OrbitControls';
+import OrbitControls from './lib/OrbitControls';
 
 const THREE = require('three');
 
@@ -50,9 +50,9 @@ function ThreeRenderer(container) {
   this.camera.position.z = 5
   this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-  //let orbitControls = new OrbitControls(this.camera, container);
-  //this.orbitControls = orbitControls;
-  //this.orbitControls.addEventListener('change', function (event) {});
+  let orbitControls = new OrbitControls(this.camera, container);
+  this.orbitControls = orbitControls;
+  this.orbitControls.addEventListener('change', function (event) {});
 
   this.scene = new THREE.Scene();
   this.scene.background = new THREE.Color('gray');
