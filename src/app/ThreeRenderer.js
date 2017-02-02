@@ -1,6 +1,7 @@
 import moment from 'moment';
 import Vector from './Vector';
 import OrbitControls from './lib/OrbitControls';
+import starsUrl from '../img/stars-background.jpg';
 
 const THREE = require('three');
 
@@ -32,7 +33,7 @@ const PLANET_SIZES = {
   "sun": 15,
 }
 
-function ThreeRenderer(container) {
+function ThreeRenderer(container, backgroundImage) {
 
   let width = 1024;
   let height = 680;
@@ -41,7 +42,8 @@ function ThreeRenderer(container) {
   this.renderer.setSize(width, height);
   container.appendChild(this.renderer.domElement);
 
-  let timeCounter = container.getRootNode().createElement("h3");
+  let timeCounter = container.getRootNode()
+    .createElement("h3");
   this.timeCounter = timeCounter;
   container.appendChild(timeCounter);
 
@@ -55,7 +57,6 @@ function ThreeRenderer(container) {
   this.orbitControls.addEventListener('change', function (event) {});
 
   this.scene = new THREE.Scene();
-  this.scene.background = new THREE.Color('gray');
 
   this.prevTrajectory = Object.create(null);
   this.planetMap = {};
@@ -76,51 +77,56 @@ ThreeRenderer.prototype.initialize = function (solarSystem) {
   // Maintain a mapping from planet -> THREE object representing the planet
   // This will allow us to update the existing THREE object on each iteration
   // of the render loop.
-  solarSystem.planets.forEach(function (planet) {
+  return new Promise((resolve, reject) => {
+    solarSystem.planets.forEach(function (planet) {
 
-    let bodies = this.planetMap[planet.name] || {};
-    for (threeObject of Object.values(bodies))
-      this.scene.remove(threeObject);
+      let bodies = this.planetMap[planet.name] || {};
+      for (threeObject of Object.values(bodies))
+        this.scene.remove(threeObject);
 
-    const threeBody = new THREE.Mesh(new THREE.SphereGeometry(PLANET_SIZES[planet.name] / 100, 32, 32),
-      new THREE.MeshBasicMaterial({
-        color: PLANET_COLOURS[planet.name]
-      }));
+      const threeBody = new THREE.Mesh(new THREE.SphereGeometry(PLANET_SIZES[planet.name] / 100, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: PLANET_COLOURS[planet.name]
+        }));
 
-    const periapsis = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32),
-      new THREE.MeshBasicMaterial({
-        color: 'purple'
-      }));
+      const periapsis = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: 'purple'
+        }));
 
-    const apoapsis = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32),
-      new THREE.MeshBasicMaterial({
-        color: 'aqua'
-      }));
+      const apoapsis = new THREE.Mesh(new THREE.SphereGeometry(0.01, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: 'aqua'
+        }));
 
-    const trajectory = new THREE.Line(new THREE.RingGeometry(1, 1, 32),
-      new THREE.LineBasicMaterial({
-        color: PLANET_COLOURS[planet.name]
-      }));
+      const trajectory = new THREE.Line(new THREE.RingGeometry(1, 1, 32),
+        new THREE.LineBasicMaterial({
+          color: PLANET_COLOURS[planet.name]
+        }));
 
-    this.scene.add(threeBody);
-    this.scene.add(periapsis);
-    this.scene.add(apoapsis);
-    this.scene.add(trajectory);
+      this.scene.add(threeBody);
+      this.scene.add(periapsis);
+      this.scene.add(apoapsis);
+      this.scene.add(trajectory);
 
-    this.planetMap[planet.name] = Object.assign(Object.create(null), {
-      body: threeBody,
-      periapsis: periapsis,
-      apoapsis: apoapsis,
-      trajectory: trajectory
-    });
+      this.planetMap[planet.name] = Object.assign(Object.create(null), {
+        body: threeBody,
+        periapsis: periapsis,
+        apoapsis: apoapsis,
+        trajectory: trajectory
+      });
 
-    let trajectoryStats = Object.create(null);
-    trajectoryStats.argumentPerihelion = 0;
-    trajectoryStats.I = 0;
-    trajectoryStats.omega = 0;
-    this.prevTrajectory[planet.name] = trajectoryStats;
+      let trajectoryStats = Object.create(null);
+      trajectoryStats.argumentPerihelion = 0;
+      trajectoryStats.I = 0;
+      trajectoryStats.omega = 0;
+      this.prevTrajectory[planet.name] = trajectoryStats;
 
-  }, this);
+    }, this);
+
+    this.scene.background = new THREE.Color('black');
+    resolve();
+  });
 
 };
 

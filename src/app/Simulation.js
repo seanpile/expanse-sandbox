@@ -88,7 +88,10 @@ Simulation.prototype.isRunning = function () {
 
 Simulation.prototype.initialize = function () {
   this.solarSystem.update(this.time, 0);
-  this.renderer.initialize(this.solarSystem);
+  this.renderer.initialize(this.solarSystem)
+    .then(() => {
+      this.renderer.render(this, this.solarSystem);
+    });
 };
 
 Simulation.prototype.run = function () {

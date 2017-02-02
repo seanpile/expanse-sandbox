@@ -5,10 +5,10 @@ import Simulation from './app/Simulation';
 import Vector from './app/Vector';
 import Stats from 'stats.js';
 
-let container = document.getElementById('simulation-content');
-let backgroundImage = document.getElementById('stars-background');
+let container = document.createElement('div');
+document.body.appendChild(container);
 
-//let renderer = new CanvasRenderer(container, backgroundImage);
+//let renderer = new CanvasRenderer(container);
 let renderer = new ThreeRenderer(container);
 let solarSystem = new SolarSystem();
 

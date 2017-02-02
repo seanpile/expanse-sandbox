@@ -1,5 +1,6 @@
 import moment from 'moment';
 import Vector from './Vector';
+import starsUrl from '../img/stars-background.jpg';
 
 const MIN_ZOOM_LEVEL = 10;
 const MAX_ZOOM_LEVEL = 1000;
@@ -30,7 +31,7 @@ const PLANET_SIZES = {
   "sun": 15,
 }
 
-function CanvasRenderer(container, backgroundImage) {
+function CanvasRenderer(container) {
 
   let document = container.getRootNode();
   let canvas = document.createElement('canvas');
@@ -40,7 +41,8 @@ function CanvasRenderer(container, backgroundImage) {
 
   this.canvas = canvas;
   this.ctx = this.canvas.getContext("2d");
-  this.backgroundImage = backgroundImage;
+
+  this.backgroundImage = document.createElement("img");
 
   this.zoom = DEFAULT_ZOOM;
   this.viewDeltaX = 0;
@@ -200,7 +202,14 @@ CanvasRenderer.prototype.moveViewBy = function (deltaX, deltaY) {
 };
 
 CanvasRenderer.prototype.initialize = function (solarSystem) {
-  // Do nothing; we redraw all elements on every loop
+  // Load the stars background image in the background
+  // (asynchronous, notify when we are done)
+  return new Promise((resolve, reject) => {
+    this.backgroundImage.onload = function () {
+      resolve();
+    };
+    this.backgroundImage.src = starsUrl;
+  });
 };
 
 CanvasRenderer.prototype.render = function (simulation, solarSystem) {
@@ -208,8 +217,8 @@ CanvasRenderer.prototype.render = function (simulation, solarSystem) {
   const canvas = this.canvas;
 
   // Clear Canvas
-  ctx.drawImage(this.backgroundImage, 0, 0, canvas.width, canvas.height);
   ctx.save();
+  ctx.drawImage(this.backgroundImage, 0, 0, canvas.width, canvas.height);
 
   // Center the coordinate system in the middle
   ctx.scale(-1, 1);

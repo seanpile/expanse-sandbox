@@ -1,7 +1,6 @@
 import moment from 'moment';
 import PLANETS from './Planets';
 import Vector from './Vector';
-import MovingAverage from './util/MovingAverage';
 
 const J2000_date = moment('2000-01-01T12:00:00Z');
 const J2000_epoch = 2451545.0;

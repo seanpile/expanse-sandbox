@@ -1,12 +1,20 @@
 const path = require('path');
 const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  context: path.resolve(__dirname, './src'),
-  entry: './main.js',
-  devtool: 'cheap-eval-source-map',
+  entry: {
+    main: './src/main.js',
+    vendor: './src/vendor.js'
+  },
+  devtool: 'cheap-module-eval-source-map',
   module: {
     rules: [{
+      test: /\.jpg$/,
+      use: [{
+        loader: "file-loader",
+      }],
+    }, {
       test: /\.js$/,
       exclude: [/node_modules/],
       use: [{
@@ -18,11 +26,19 @@ module.exports = {
     }]
   },
   output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, './dist/assets'),
-    publicPath: '/assets'
+    filename: '[chunkhash].[name].js',
+    path: path.resolve(__dirname, 'build'),
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'The Expanse'
+    }),
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'vendor'
+    })
+  ],
   devServer: {
-    contentBase: path.resolve(__dirname, './src')
-  }
+    contentBase: path.resolve(__dirname, 'build'),
+    publicPath: '/'
+  },
 }
