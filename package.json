@@ -1,7 +1,7 @@
 {
-  "name": "expanse",
+  "name": "expanse-sandbox",
   "version": "1.0.0",
-  "description": "Orbital Mechanics Simulator in 2d/3d",
+  "description": "Orbital Mechanics Simulator (JavaScript, Canvas, WebGL, Three.js, Webpack2)",
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf build",
@@ -13,8 +13,8 @@
     "type": "git",
     "url": "/Users/work/Dropbox/git/expanse.git"
   },
-  "author": "Sean Dawson <sean.dawson@gmail.com>",
-  "license": "ISC",
+  "author": "seanpile",
+  "license": "MIT",
   "devDependencies": {
     "babel-core": "^6.22.1",
     "babel-loader": "^6.2.10",
